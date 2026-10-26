@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Max Flow Visualizer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Max Flow Visualizer</h1>
+    <p>Edmonds-Karp on a directed network. Thicker pipe means more flow.</p>
+  </header>
+
+  <main>
+    <section class="board">
+      <svg id="graph" viewBox="0 0 830 480" role="img" aria-label="Flow network">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+                  markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" class="arrowhead"/>
+          </marker>
+        </defs>
+      </svg>
+    </section>
+
+    <aside class="panel">
+      <h2>Augmenting paths</h2>
+      <ol id="stepList"></ol>
+      <div class="controls">
+        <button id="prev">Previous</button>
+        <button id="next">Next</button>
+        <button id="reset">Reset</button>
+      </div>
+      <p class="total">Flow so far <strong id="flowTotal">0</strong></p>
+      <ul class="legend">
+        <li><i class="k-water"></i>Flow in use</li>
+        <li><i class="k-active"></i>Current augmenting path</li>
+        <li><i class="k-full"></i>Saturated edge (flow = capacity)</li>
+      </ul>
+    </aside>
+  </main>
+
+  <script src="graph.js"></script>
+  <script src="maxflow.js"></script>
+  <script src="ui.js"></script>
+</body>
+</html>
