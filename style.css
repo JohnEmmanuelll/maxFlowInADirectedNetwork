@@ -1,0 +1,70 @@
+:root {
+  --paper: #e8eef1;
+  --grid: #d3dde3;
+  --surface: #f9fbfc;
+  --ink: #14263a;
+  --muted: #5d7183;
+  --track: #c9d7e0;
+  --water: #1f8a9e;
+  --active: #ee8a1f;
+  --full: #0b4a5a;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; color: var(--ink); background: var(--paper);
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+header { padding: 22px 28px 6px; }
+h1 { margin: 0; font: 600 1.7rem "Iowan Old Style", Palatino, Georgia, serif; }
+header p { margin: 4px 0 0; color: var(--muted); }
+main { display: grid; grid-template-columns: 1fr 310px; gap: 20px; padding: 16px 28px 28px; }
+
+.board {
+  border: 1px solid var(--track); border-radius: 6px; background-color: var(--surface);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+svg { display: block; width: 100%; height: auto; }
+
+.panel { align-self: start; padding: 18px; border: 1px solid var(--track); border-radius: 6px; background: var(--surface); }
+h2 { margin: 0 0 10px; font: 600 1.1rem "Iowan Old Style", Palatino, Georgia, serif; }
+ol { margin: 0 0 14px; padding-left: 22px; min-height: 6.5em; font-variant-numeric: tabular-nums; }
+li { padding: 3px 0; color: var(--muted); }
+li.done { color: var(--ink); }
+li.now { color: var(--ink); font-weight: 700; }
+li.now::marker { color: var(--active); }
+
+.controls { display: flex; gap: 8px; }
+button {
+  flex: 1; padding: 9px 8px; font: inherit; color: var(--ink); cursor: pointer;
+  background: var(--paper); border: 1px solid var(--track); border-radius: 4px;
+}
+button:hover:not(:disabled) { border-color: var(--water); }
+button:focus-visible { outline: 3px solid var(--active); outline-offset: 2px; }
+button:disabled { opacity: .4; cursor: not-allowed; }
+
+.total { margin: 18px 0 14px; color: var(--muted); }
+.total strong { margin-left: 8px; color: var(--ink); font-size: 1.8rem; font-variant-numeric: tabular-nums; }
+.legend { margin: 0; padding: 12px 0 0; list-style: none; border-top: 1px solid var(--track); font-size: .88rem; color: var(--muted); }
+.legend li { display: flex; align-items: center; gap: 10px; padding: 3px 0; color: var(--muted); }
+.legend i { width: 22px; height: 8px; border-radius: 2px; }
+.k-water { background: var(--water); } .k-active { background: var(--active); } .k-full { background: var(--full); }
+
+/* SVG parts (nilalagay ng ui.js) */
+.pipe { fill: none; stroke: var(--track); }
+.water { fill: none; stroke: var(--water); }
+.water.active { stroke: var(--active); }
+.water.full { stroke: var(--full); }
+.arrowhead { fill: var(--ink); }
+.label {
+  font: 700 13px "Segoe UI", system-ui, sans-serif; fill: var(--ink); font-variant-numeric: tabular-nums;
+  stroke: var(--surface); stroke-width: 5px; paint-order: stroke;
+}
+.node { fill: var(--surface); stroke: var(--ink); stroke-width: 2.5; }
+.node.end { fill: var(--ink); }
+.node-label { font: 700 16px "Segoe UI", system-ui, sans-serif; fill: var(--ink); }
+.node-label.end { fill: var(--surface); }
+
+@media (max-width: 820px) { main { grid-template-columns: 1fr; padding: 12px; } }
