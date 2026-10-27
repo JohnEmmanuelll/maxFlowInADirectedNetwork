@@ -1,10 +1,11 @@
-// graph.js — data ng graph. format na gagamitin namin ni shane ui/algo lead
-// Bawat edge ay may: from, to, capacity.  Ang flow ay HINDI dito naka-store;
+
+ // graph.js — data ng graph. format na gagamitin namin ni shane ui/algo lead
+// Bawat edge ay may: from, to, capacity. Ang flow ay HINDI dito naka-store;
 // galing ito sa "steps" na ibabalik ng algorithm.
 
 const sampleGraph = {
   nodes: [
-    { id: 'S', x: 70,  y: 240 },
+    { id: 'S', x: 70, y: 240 },
     { id: 'A', x: 270, y: 100 },
     { id: 'B', x: 270, y: 380 },
     { id: 'C', x: 560, y: 100 },

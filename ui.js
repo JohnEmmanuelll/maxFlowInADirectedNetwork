@@ -1,50 +1,82 @@
-// ui.js — drawing at buttons (UI Lead).
+
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const SOURCE = 'S', SINK = 'T';
-const R = 24;                                   // radius ng node
+const SOURCE = 'S';
+const SINK = 'T';
+const R = 24;
 
 const svg = document.getElementById('graph');
 const stepList = document.getElementById('stepList');
 const flowTotal = document.getElementById('flowTotal');
 const prevBtn = document.getElementById('prev');
 const nextBtn = document.getElementById('next');
+const resetBtn = document.getElementById('reset');
 
-const nodeById = Object.fromEntries(sampleGraph.nodes.map((n) => [n.id, n]));
+const nodeById = Object.fromEntries(
+  sampleGraph.nodes.map((n) => [n.id, n])
+);
+
 const steps = edmondsKarp(sampleGraph, SOURCE, SINK);
-let current = 0;                                // 0 = di pa nagsisimula, 1..n = step number
+let current = 0;
 
 // Gumawa ng SVG element
 function el(name, attrs = {}, text) {
-  const e = document.createElementNS(SVG_NS, name);
-  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
-  if (text !== undefined) e.textContent = text;
-  return e;
+  const element = document.createElementNS(SVG_NS, name);
+
+  for (const [key, value] of Object.entries(attrs)) {
+    element.setAttribute(key, value);
+  }
+
+  if (text !== undefined) {
+    element.textContent = text;
+  }
+
+  return element;
 }
 
-// Kapal ng pipe: mas malaki ang value, mas makapal
-const thickness = (v) => 2 + v * 0.9;
+// Kapal ng pipe depende sa capacity o flow
+const thickness = (value) => 2 + value * 0.9;
 
-// Hugis ng edge. Kapag may kabilang direksyon (A->B at B->A), kurbado para hindi mag-overlap.
-function edgeShape(e) {
-  const a = nodeById[e.from], b = nodeById[e.to];
-  const hasReverse = sampleGraph.edges.some((o) => o.from === e.to && o.to === e.from);
-  const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
-  const off = hasReverse ? 40 : 0;
-  const cx = (a.x + b.x) / 2 + (-dy / len) * off;   // control point
-  const cy = (a.y + b.y) / 2 + (dx / len) * off;
-  const trim = (p) => {                              // umpisa/dulo sa gilid ng node, hindi sa gitna
-    const d = Math.hypot(cx - p.x, cy - p.y);
-    return { x: p.x + ((cx - p.x) / d) * R, y: p.y + ((cy - p.y) / d) * R };
+// Gumuhit ng edge at ilagay ang label sa gitna
+function edgeShape(edge) {
+  const a = nodeById[edge.from];
+  const b = nodeById[edge.to];
+
+  const hasReverse = sampleGraph.edges.some(
+    (other) => other.from === edge.to && other.to === edge.from
+  );
+
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const length = Math.hypot(dx, dy);
+
+  const offset = hasReverse ? 40 : 0;
+  const cx = (a.x + b.x) / 2 + (-dy / length) * offset;
+  const cy = (a.y + b.y) / 2 + (dx / length) * offset;
+
+  const trim = (point) => {
+    const distance = Math.hypot(cx - point.x, cy - point.y);
+
+    return {
+      x: point.x + ((cx - point.x) / distance) * R,
+      y: point.y + ((cy - point.y) / distance) * R
+    };
   };
-  const s = trim(a);
-  const t = (() => {                                 // dulo: galing sa b papunta sa control point
-    const d = Math.hypot(cx - b.x, cy - b.y);
-    return { x: b.x + ((cx - b.x) / d) * R, y: b.y + ((cy - b.y) / d) * R };
+
+  const start = trim(a);
+
+  const end = (() => {
+    const distance = Math.hypot(cx - b.x, cy - b.y);
+
+    return {
+      x: b.x + ((cx - b.x) / distance) * R,
+      y: b.y + ((cy - b.y) / distance) * R
+    };
   })();
+
   return {
-    d: `M${s.x},${s.y} Q${cx},${cy} ${t.x},${t.y}`,
-    lx: 0.25 * s.x + 0.5 * cx + 0.25 * t.x,           // gitna ng curve para sa label
-    ly: 0.25 * s.y + 0.5 * cy + 0.25 * t.y,
+    d: `M${start.x},${start.y} Q${cx},${cy} ${end.x},${end.y}`,
+    lx: 0.25 * start.x + 0.5 * cx + 0.25 * end.x,
+    ly: 0.25 * start.y + 0.5 * cy + 0.25 * end.y
   };
 }
 
@@ -52,45 +84,140 @@ function render() {
   const step = current > 0 ? steps[current - 1] : null;
   const flows = step ? step.flows : {};
   const onPath = new Set();
-  if (step) for (let i = 0; i < step.path.length - 1; i++) onPath.add(`${step.path[i]}-${step.path[i + 1]}`);
 
-  svg.querySelectorAll('.layer').forEach((n) => n.remove());
+  if (step) {
+    for (let i = 0; i < step.path.length - 1; i++) {
+      onPath.add(`${step.path[i]}-${step.path[i + 1]}`);
+    }
+  }
+
+  svg.querySelectorAll('.layer').forEach((layer) => layer.remove());
+
   const layer = el('g', { class: 'layer' });
 
-  for (const e of sampleGraph.edges) {
-    const key = edgeKey(e);
-    const f = flows[key] || 0;
-    const state = onPath.has(key) ? 'active' : f > 0 && f === e.capacity ? 'full' : '';
-    const g = edgeShape(e);
-    layer.append(el('path', { d: g.d, class: 'pipe', 'stroke-width': thickness(e.capacity), 'marker-end': 'url(#arrow)' }));
-    if (f > 0) layer.append(el('path', { d: g.d, class: `water ${state}`, 'stroke-width': thickness(f) }));
-    layer.append(el('text', { x: g.lx, y: g.ly, class: 'label', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, `${f}/${e.capacity}`));
-  }
+  // Iguhit ang mga edge
+  for (const edge of sampleGraph.edges) {
+    const key = edgeKey(edge);
+    const flow = flows[key] || 0;
 
-  for (const n of sampleGraph.nodes) {
-    const end = n.id === SOURCE || n.id === SINK ? ' end' : '';
+    const state = onPath.has(key)
+      ? 'active'
+      : flow > 0 && flow === edge.capacity
+        ? 'full'
+        : '';
+
+    const shape = edgeShape(edge);
+
     layer.append(
-      el('circle', { cx: n.x, cy: n.y, r: R, class: `node${end}` }),
-      el('text', { x: n.x, y: n.y, class: `node-label${end}`, 'text-anchor': 'middle', 'dominant-baseline': 'central' }, n.id)
+      el('path', {
+        d: shape.d,
+        class: 'pipe',
+        'stroke-width': thickness(edge.capacity),
+        'marker-end': 'url(#arrow)'
+      })
+    );
+
+    if (flow > 0) {
+      layer.append(
+        el('path', {
+          d: shape.d,
+          class: `water ${state}`,
+          'stroke-width': thickness(flow)
+        })
+      );
+    }
+
+    layer.append(
+      el(
+        'text',
+        {
+          x: shape.lx,
+          y: shape.ly,
+          class: 'label',
+          'text-anchor': 'middle',
+          'dominant-baseline': 'central'
+        },
+        `${flow}/${edge.capacity}`
+      )
     );
   }
+
+  // Iguhit ang mga node
+  for (const node of sampleGraph.nodes) {
+    const end =
+      node.id === SOURCE || node.id === SINK ? ' end' : '';
+
+    layer.append(
+      el('circle', {
+        cx: node.x,
+        cy: node.y,
+        r: R,
+        class: `node${end}`
+      }),
+      el(
+        'text',
+        {
+          x: node.x,
+          y: node.y,
+          class: `node-label${end}`,
+          'text-anchor': 'middle',
+          'dominant-baseline': 'central'
+        },
+        node.id
+      )
+    );
+  }
+
   svg.append(layer);
 
-  // Side panel
+  // I-update ang listahan ng augmenting paths
   stepList.innerHTML = '';
-  steps.forEach((s, i) => {
-    const li = document.createElement('li');
-    li.textContent = `${s.path.join(' → ')}  (+${s.bottleneck})`;
-    li.className = i + 1 === current ? 'now' : i + 1 < current ? 'done' : '';
-    stepList.append(li);
+
+  steps.forEach((item, index) => {
+    const listItem = document.createElement('li');
+
+    listItem.textContent =
+      `${item.path.join(' → ')}  (+${item.bottleneck})`;
+
+    listItem.className =
+      index + 1 === current
+        ? 'now'
+        : index + 1 < current
+          ? 'done'
+          : '';
+
+    stepList.append(listItem);
   });
-  flowTotal.textContent = steps.slice(0, current).reduce((sum, s) => sum + s.bottleneck, 0);
+
+  // I-update ang total flow at buttons
+  flowTotal.textContent = steps
+    .slice(0, current)
+    .reduce((sum, item) => sum + item.bottleneck, 0);
+
   prevBtn.disabled = current === 0;
   nextBtn.disabled = current === steps.length;
 }
 
-prevBtn.addEventListener('click', () => { current--; render(); });
-nextBtn.addEventListener('click', () => { current++; render(); });
-document.getElementById('reset').addEventListener('click', () => { current = 0; render(); });
+// Previous button
+prevBtn.addEventListener('click', () => {
+  if (current > 0) {
+    current--;
+    render();
+  }
+});
+
+// Next button
+nextBtn.addEventListener('click', () => {
+  if (current < steps.length) {
+    current++;
+    render();
+  }
+});
+
+// Reset button
+resetBtn.addEventListener('click', () => {
+  current = 0;
+  render();
+});
 
 render();
